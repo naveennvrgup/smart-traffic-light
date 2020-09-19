@@ -14,12 +14,29 @@ SECRET_KEY = 'vh-7q#*n)@5g$2cd+c4f8&+vt0@az562ll%h69qc3)3!yj2tih'
 DEBUG = True
 
 ALLOWED_HOSTS = []
+
 CORS_ALLOW_ALL_ORIGINS = True
+
+# drf-yasg
+SWAGGER_SETTINGS = {
+    'DEFAULT_MODEL_RENDERING': 'example',
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        }
+    },
+    'USE_SESSION_AUTH': False,
+    'PERSIST_AUTH': True
+}
 
 # Application definition
 
 INSTALLED_APPS = [
     'corsheaders',
+    'drf_yasg',
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
