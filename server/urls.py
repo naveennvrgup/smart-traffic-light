@@ -15,8 +15,16 @@ schema_view = get_schema_view(
       ### General Instructions
 
       1. This is the server for minor project. 
-      1. Hosted Node-Red simulator can be found at http://54.194.87.141:1880/
+      1. Hosted **Node-Red simulator** can be found at http://54.194.87.141:1880/
       1. Token authentication is used.
+      1. Test user: (username: **a108**, password: **minor123**)
+      1. Sample auth token (token of a108): **"Token dbef64a307efc2df5a8cab4827a8a65833f1b5e6**"
+      1. Send whatever is quoted above as token in Authorization header(without quotes). Else you will face 401 Unauthorised
+      1. The smart traffic lights algorithm is still in the works.
+      1. For django admin visit /admin (username: **admin**, password: **admin**)
+      1. **This interactive API can be used as an alternative to postman**.
+      1. The **green authorization button** on the right side can be used to simulate login by pasting the token in the provided field. 
+      1. for making a API call append the relative URL to IP of this server.
       """,
    ),
    public=True,
