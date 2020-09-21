@@ -19,7 +19,7 @@ schema_view = get_schema_view(
       1. Token authentication is used.
       1. Test user: (username: **a108**, password: **minor123**)
       1. Sample auth token (token of a108): **"Token dbef64a307efc2df5a8cab4827a8a65833f1b5e6**"
-      1. Send whatever is quoted above as token in Authorization header(without quotes). Else you will face 401 Unauthorised
+      1. After login send the token obtained for example see above. Else you will face 401 Unauthorised
       1. The smart traffic lights algorithm is still in the works.
       1. For django admin visit /admin (username: **admin**, password: **admin**)
       1. **This interactive API can be used as an alternative to postman**.

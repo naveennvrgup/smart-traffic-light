@@ -16,7 +16,7 @@ class RoutingView(APIView):
     permission_classes=[IsAuthenticated]
 
     @swagger_auto_schema(
-        operation_id='login_user',
+        operation_id='smart_route',
         request_body=RoutingSerializer,
         responses={
             401: set_example(responses.unauthenticated_401),
