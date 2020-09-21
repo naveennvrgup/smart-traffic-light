@@ -86,7 +86,7 @@ class RoutingView(APIView):
         # prepare the smart route response
         smartRouteResponse={
             'distance': routeAPIResponse['distance'],
-            'distanceKms': round(routeAPIResponse['distance']/100,1),
+            'distanceKms': round(routeAPIResponse['distance']/1000,1),
             'time': routeAPIResponse['time'],
             'timeMins': routeAPIResponse['time']/60//1000,
             'polyline':routeAPIResponse['points'],
