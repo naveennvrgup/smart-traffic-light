@@ -10,6 +10,19 @@ from .serializers import *
 from decouple import config
 import requests
 import polyline
+from .models import *
+from geopy.distance import geodesic
+
+
+
+def isPointOnRoute(wayPoints, lat, lng):
+    for waypoint in wayPoints:
+        # if the geoPoint is within 10m of wayPoint we can consider the geoPoint to be "in route"
+        if geodesic(waypoint,(lat,lng)).meters <= 10:
+            print(f"{lat},{lng}")
+            return True
+    return False
+
 
 
 class RoutingView(APIView):
@@ -27,7 +40,7 @@ class RoutingView(APIView):
             sample request from Banasankari,Banglore to Jayanagar,Banglore
             {
                 "originLat": 12.9292674,
-                "originLong": 77.5440772,
+                "originLng": 77.5440772,
                 "destination": "Jayanagar,Banglore"
             }
         """
@@ -44,7 +57,7 @@ class RoutingView(APIView):
         apiKey=config('MAPS_API_KEY')
         destination=cleanData['destination']
         originLat=cleanData['originLat']
-        originLong=cleanData['originLong']
+        originLng=cleanData['originLng']
 
         geoCodeDestinationAPI=(
             f'https://graphhopper.com/api/1/geocode'
@@ -58,15 +71,15 @@ class RoutingView(APIView):
         geoCodeDestinationAPIResponse = requests.get(geoCodeDestinationAPI).json()
         destinationPosition=geoCodeDestinationAPIResponse['hits'][0]['point']
         destinationLat=destinationPosition['lat']
-        destinationLong=destinationPosition['lng']
-        print(f'[destinationLat,destinationLong]: [{destinationLat},{destinationLong}]')
+        destinationLng=destinationPosition['lng']
+        print(f'[destinationLat,destinationLng]: [{destinationLat},{destinationLng}]')
 
 
         # prepare route API
         routeAPI = (
             f'https://graphhopper.com/api/1/route'
-            f'?point={originLat},{originLong}'
-            f'&point={destinationLat},{destinationLong}'
+            f'?point={originLat},{originLng}'
+            f'&point={destinationLat},{destinationLng}'
             f'&vehicle=car'
             f'&instructions=false'
             # f'&points_encoded=false'
@@ -79,9 +92,27 @@ class RoutingView(APIView):
         # call route API
         routeAPIResponse = requests.get(routeAPI).json()
         routeAPIResponse=routeAPIResponse['paths'][0]
+        wayPoints=polyline.decode(routeAPIResponse['points'])
         print(routeAPIResponse)
 
-        
+
+
+        # print waypoint for dev test plotting
+        print(f"---waypoint--{len(wayPoints)}----")
+        for wayPoint in wayPoints:
+            print(f"{wayPoint[0]},{wayPoint[1]}")
+        print(f"---traffic signals on point----")
+    
+                
+        # smart traffic signals on the path
+        allTrafficSignals= TrafficSignal.objects.all()
+        trafficSignalsOnPath = []
+        for trafficSignal in allTrafficSignals:
+            if isPointOnRoute(wayPoints, trafficSignal.lat, trafficSignal.lng):
+                trafficSignalsOnPath.append({
+                    'lat': trafficSignal.lat,
+                    'lng': trafficSignal.lng
+                })
 
         # prepare the smart route response
         smartRouteResponse={
@@ -90,9 +121,11 @@ class RoutingView(APIView):
             'time': routeAPIResponse['time'],
             'timeMins': routeAPIResponse['time']/60//1000,
             'polyline':routeAPIResponse['points'],
-            'smartTrafficLights': ['still on works will have to do this algo'],
-            'points': polyline.decode(routeAPIResponse['points']),
+            'trafficSignalsOnPath': trafficSignalsOnPath,
+            'wayPoints': wayPoints,
         }
-        print(len(smartRouteResponse['points']))
+        print(len(smartRouteResponse['wayPoints']))
+        
+
         return Response(smartRouteResponse)
 
