@@ -65,6 +65,7 @@ class RoutingView(APIView):
             f'&debug=true'
             f'&key={apiKey}'
         )
+        print(f"\n----geoCodeDestinationAPI---")
         print(geoCodeDestinationAPI)
         
         # call geo code API
@@ -72,6 +73,7 @@ class RoutingView(APIView):
         destinationPosition=geoCodeDestinationAPIResponse['hits'][0]['point']
         destinationLat=destinationPosition['lat']
         destinationLng=destinationPosition['lng']
+        print(f"\n----geoCodeDestinationAPIResponse---")
         print(f'[destinationLat,destinationLng]: [{destinationLat},{destinationLng}]')
 
 
@@ -86,6 +88,7 @@ class RoutingView(APIView):
             f'&alternative_route.max_paths=1'
             f'&key={apiKey}'
         )
+        print(f"\n----routeAPI---")
         print(routeAPI)
 
 
@@ -93,15 +96,16 @@ class RoutingView(APIView):
         routeAPIResponse = requests.get(routeAPI).json()
         routeAPIResponse=routeAPIResponse['paths'][0]
         wayPoints=polyline.decode(routeAPIResponse['points'])
+        print(f"\n----routeAPIResponse---")
         print(routeAPIResponse)
 
 
 
         # print waypoint for dev test plotting
-        print(f"---waypoint--{len(wayPoints)}----")
+        print(f"\n---waypoint--{len(wayPoints)}----")
         for wayPoint in wayPoints:
             print(f"{wayPoint[0]},{wayPoint[1]}")
-        print(f"---traffic signals on point----")
+        print(f"\n---traffic signals on point----")
     
                 
         # smart traffic signals on the path
@@ -109,23 +113,20 @@ class RoutingView(APIView):
         trafficSignalsOnPath = []
         for trafficSignal in allTrafficSignals:
             if isPointOnRoute(wayPoints, trafficSignal.lat, trafficSignal.lng):
-                trafficSignalsOnPath.append({
-                    'lat': trafficSignal.lat,
-                    'lng': trafficSignal.lng
-                })
+                trafficSignalsOnPath.append([
+                    trafficSignal.lat,
+                    trafficSignal.lng
+                ])
 
         # prepare the smart route response
         smartRouteResponse={
-            'distance': routeAPIResponse['distance'],
             'distanceKms': round(routeAPIResponse['distance']/1000,1),
-            'time': routeAPIResponse['time'],
             'timeMins': routeAPIResponse['time']/60//1000,
             'polyline':routeAPIResponse['points'],
             'trafficSignalsOnPath': trafficSignalsOnPath,
             'wayPoints': wayPoints,
         }
-        print(len(smartRouteResponse['wayPoints']))
-        
+
 
         return Response(smartRouteResponse)
 
