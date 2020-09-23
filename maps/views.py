@@ -37,11 +37,11 @@ class RoutingView(APIView):
     )
     def post(self, request):
         """
-            sample request from Banasankari,Banglore to Jayanagar,Banglore
+            sample request 
             {
-                "originLat": 12.9292674,
-                "originLng": 77.5440772,
-                "destination": "Jayanagar,Banglore"
+            "originLat": 11.215659,
+            "originLng": 77.357261,
+            "destination": "puluapatti, Tiruppur, Tamil Nadu"
             }
         """
 
@@ -128,5 +128,19 @@ class RoutingView(APIView):
         }
 
 
-        return Response(smartRouteResponse)
+        return Response(smartRouteResponse, status.HTTP_200_OK)
 
+
+
+class AllTrafficSignalsView(APIView):
+    permission_classes=[IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_id='registered_smart_traffic_signals',
+        responses={
+            401: set_example(responses.unauthenticated_401),
+        },
+    )
+    def get(self, request):
+        allTrafficSignals = [[x.lat,x.lng] for x in TrafficSignal.objects.all()]
+        return Response(allTrafficSignals, status.HTTP_200_OK)
