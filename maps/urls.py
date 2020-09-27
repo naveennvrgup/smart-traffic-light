@@ -6,4 +6,6 @@ urlpatterns = [
     path('getRoute/', SmartRouteView),
     path('allSignals/', AllTrafficSignalsView),
     path('allHospitals/', AllHospitalsView),
+    path('turnSignalNormal/<int:signalId>/', TurnTrafficSignalNormalView),
+    path('onHospitalRoute/<int:routeId>/', OnHospitalRouteView),
 ]

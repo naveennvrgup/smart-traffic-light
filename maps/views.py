@@ -253,6 +253,7 @@ def SmartRouteView(request):
         'hospitalName': nearestHospital.location,
         'hospitalLat': nearestHospital.lat,
         'hospitalLng': nearestHospital.lng,
+        'hospitalRouteId': 12,
 
         'destinationSignals': desSignals,
         'hospitalSignals': hosSignals,
@@ -283,6 +284,7 @@ def SmartRouteView(request):
 @permission_classes([IsAuthenticated])
 def AllTrafficSignalsView(request):
     allTrafficSignals = [{
+        'id':x.id,
         'lat':x.lat,
         'lng':x.lng,
         'name':x.location,
@@ -317,3 +319,34 @@ def AllHospitalsView(request):
         print(f"{hospital['lat']},{hospital['lng']}")
 
     return Response(allHospitals, status.HTTP_200_OK)
+
+
+
+@swagger_auto_schema(
+    operation_id='turn_traffic_signal_to_normal_state',
+    responses={
+        401: set_example(responses.unauthenticated_401),
+    },
+    method='get'
+)
+@api_view(['get'])
+@permission_classes([IsAuthenticated])
+def TurnTrafficSignalNormalView(request,signalId):
+    print(signalId)
+
+    return Response({'msg':'Traffic Signal returned to normal'}, status.HTTP_200_OK)
+
+
+@swagger_auto_schema(
+    operation_id='turn_on_hospital_route',
+    responses={
+        401: set_example(responses.unauthenticated_401),
+    },
+    method='get'
+)
+@api_view(['get'])
+@permission_classes([IsAuthenticated])
+def OnHospitalRouteView(request,routeId):
+    print(routeId)
+
+    return Response({'msg':'Switched to hospital route'}, status.HTTP_200_OK)
