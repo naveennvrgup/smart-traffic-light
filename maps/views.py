@@ -36,11 +36,16 @@ def isPointOnRoute(wayPoints, trafficSignal):
         # if the geoPoint is within 10m of wayPoint we can consider the geoPoint to be "in route"
         if geodesic(currWayPoint,(trafficSignal.lat,trafficSignal.lng)).meters <= 10:
             trafficLights = TrafficLight.objects.filter(signal=trafficSignal)
+
             # signal from
-            if i>0:
-                prevWayPoint=wayPoints[i-1]
-                bearing=findBearing(prevWayPoint[0], prevWayPoint[1], currWayPoint[0], currWayPoint[1])
-                diff=360
+            j=i-1
+            while j>=0 and geodesic(wayPoints[j],(trafficSignal.lat,trafficSignal.lng)).meters <= 50: 
+                j-=1
+                
+            if j>=0:
+                prevWayPoint=wayPoints[j]
+                bearing=findBearing(currWayPoint[0], currWayPoint[1], prevWayPoint[0], prevWayPoint[1])
+                diff=361
                 correctTrafficLight=None
 
                 for trafficLight in trafficLights:
@@ -52,11 +57,16 @@ def isPointOnRoute(wayPoints, trafficSignal):
                 trafficLightsEnroute.append(correctTrafficLight)
                 print(f"bearing {trafficSignal}: {correctTrafficLight}")
 
+
             # signal to
-            if i+1<n:
-                nxtWayPoint=wayPoints[i-1]
+            j=i+1
+            while j<n and geodesic(wayPoints[j],(trafficSignal.lat,trafficSignal.lng)).meters <= 50: 
+                j+=1
+
+            if j<n:
+                nxtWayPoint=wayPoints[j]
                 bearing=findBearing(currWayPoint[0], currWayPoint[1], nxtWayPoint[0],nxtWayPoint[1])
-                diff=360
+                diff=361
                 correctTrafficLight=None
 
                 for trafficLight in trafficLights:
@@ -127,7 +137,7 @@ class RoutingView(APIView):
         print(f'[destinationLat,destinationLng]: [{destinationLat},{destinationLng}]')
 
 
-        # prepare route API
+        # prepare destinationroute API
         routeAPI = (
             f'https://graphhopper.com/api/1/route'
             f'?point={originLat},{originLng}'

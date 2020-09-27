@@ -4,3 +4,4 @@ from .models import *
 
 admin.site.register(TrafficSignal)
 admin.site.register(TrafficLight)
+admin.site.register(Hospital)
