@@ -12,16 +12,65 @@ import requests
 import polyline
 from .models import *
 from geopy.distance import geodesic
+import math
+
+def findBearing(lat1,lon1,lat2,lon2):
+    # bearing is the between line formed by source,destination and north
+    dLon = lon2 - lon1
+    y = math.sin(dLon) * math.cos(lat2)
+    x = math.cos(lat1)*math.sin(lat2) - math.sin(lat1)*math.cos(lat2)*math.cos(dLon)
+    brng = math.degrees(math.atan2(y, x))
+    if brng<0: brng+=360
+
+    return int(brng)
 
 
 
-def isPointOnRoute(wayPoints, lat, lng):
-    for waypoint in wayPoints:
+def isPointOnRoute(wayPoints, trafficSignal):
+    n=len(wayPoints)
+    trafficLightsEnroute=[]
+    
+    for i in range(n):
+        currWayPoint=wayPoints[i]
+    
         # if the geoPoint is within 10m of wayPoint we can consider the geoPoint to be "in route"
-        if geodesic(waypoint,(lat,lng)).meters <= 10:
-            print(f"{lat},{lng}")
-            return True
-    return False
+        if geodesic(currWayPoint,(trafficSignal.lat,trafficSignal.lng)).meters <= 10:
+            trafficLights = TrafficLight.objects.filter(signal=trafficSignal)
+            # signal from
+            if i>0:
+                prevWayPoint=wayPoints[i-1]
+                bearing=findBearing(prevWayPoint[0], prevWayPoint[1], currWayPoint[0], currWayPoint[1])
+                diff=360
+                correctTrafficLight=None
+
+                for trafficLight in trafficLights:
+                    currDiff=abs(trafficLight.direction-bearing)
+                    if currDiff<diff:
+                        correctTrafficLight=trafficLight
+                        diff=currDiff
+
+                trafficLightsEnroute.append(correctTrafficLight)
+                print(f"bearing {trafficSignal}: {correctTrafficLight}")
+
+            # signal to
+            if i+1<n:
+                nxtWayPoint=wayPoints[i-1]
+                bearing=findBearing(currWayPoint[0], currWayPoint[1], nxtWayPoint[0],nxtWayPoint[1])
+                diff=360
+                correctTrafficLight=None
+
+                for trafficLight in trafficLights:
+                    currDiff=abs(trafficLight.direction-bearing)
+                    if currDiff<diff:
+                        correctTrafficLight=trafficLight
+                        diff=currDiff
+
+                trafficLightsEnroute.append(correctTrafficLight)
+                print(f"bearing {trafficSignal}: {correctTrafficLight}")
+                
+            break # after finding the traffic junction for the particular traffic light no need to loop again
+
+    return trafficLightsEnroute
 
 
 
@@ -33,6 +82,7 @@ class RoutingView(APIView):
         request_body=RoutingSerializer,
         responses={
             401: set_example(responses.unauthenticated_401),
+            200: set_example(responses.smart_route_200),
         },
     )
     def post(self, request):
@@ -111,12 +161,23 @@ class RoutingView(APIView):
         # smart traffic signals on the path
         allTrafficSignals= TrafficSignal.objects.all()
         trafficSignalsOnPath = []
+        trafficLightsOnPath = []
         for trafficSignal in allTrafficSignals:
-            if isPointOnRoute(wayPoints, trafficSignal.lat, trafficSignal.lng):
-                trafficSignalsOnPath.append([
-                    trafficSignal.lat,
-                    trafficSignal.lng
-                ])
+            curr=isPointOnRoute(wayPoints, trafficSignal)
+            
+            if len(curr)>0:
+                trafficSignalsOnPath.append({
+                    'lat':trafficSignal.lat,
+                    'lng':trafficSignal.lng,
+                    'location':trafficSignal.location
+                })
+                for trafficLight in curr:
+                    trafficLightsOnPath.append({
+                        'lat':trafficSignal.lat,
+                        'lng':trafficSignal.lng,
+                        'direction':trafficLight.direction,
+                        'location':trafficSignal.location,
+                    })
 
         # prepare the smart route response
         smartRouteResponse={
@@ -124,6 +185,7 @@ class RoutingView(APIView):
             'timeMins': routeAPIResponse['time']/60//1000,
             'polyline':routeAPIResponse['points'],
             'trafficSignalsOnPath': trafficSignalsOnPath,
+            'trafficLightsOnPath': trafficLightsOnPath,
             'wayPoints': wayPoints,
         }
 
