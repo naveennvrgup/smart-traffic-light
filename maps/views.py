@@ -4,15 +4,18 @@ from rest_framework.views import APIView
 from drf_yasg.utils import swagger_auto_schema
 from utils.swagger import set_example
 from rest_framework.response import Response
+from rest_framework.decorators import permission_classes, api_view
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from .serializers import *
 from decouple import config
 import requests
 import polyline
+import traceback
 from .models import *
 from geopy.distance import geodesic
 import math
+
 
 def findBearing(lat1,lon1,lat2,lon2):
     # bearing is the between line formed by source,destination and north
@@ -26,7 +29,7 @@ def findBearing(lat1,lon1,lat2,lon2):
 
 
 
-def isPointOnRoute(wayPoints, trafficSignal):
+def isTrafficLightOnRoute(wayPoints, trafficSignal):
     n=len(wayPoints)
     trafficLightsEnroute=[]
     
@@ -83,136 +86,234 @@ def isPointOnRoute(wayPoints, trafficSignal):
     return trafficLightsEnroute
 
 
-
-class RoutingView(APIView):
-    permission_classes=[IsAuthenticated]
-
-    @swagger_auto_schema(
-        operation_id='smart_route',
-        request_body=RoutingSerializer,
-        responses={
-            401: set_example(responses.unauthenticated_401),
-            200: set_example(responses.smart_route_200),
-        },
+def geoCode(destination,apiKey):
+    geoCodeDestinationAPI=(
+        f'https://graphhopper.com/api/1/geocode'
+        f'?q={destination}'
+        f'&debug=true'
+        f'&key={apiKey}'
     )
-    def post(self, request):
-        """
-            sample request 
-            {
-            "originLat": 11.215659,
-            "originLng": 77.357261,
-            "destination": "puluapatti, Tiruppur, Tamil Nadu"
-            }
-        """
-
-        # check for valid input
-        serializer=RoutingSerializer(data=request.data)
-        if serializer.is_valid():
-            cleanData = serializer.data
-        else:
-            return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)
-
-
-        # prepare geo code API
-        apiKey=config('MAPS_API_KEY')
-        destination=cleanData['destination']
-        originLat=cleanData['originLat']
-        originLng=cleanData['originLng']
-
-        geoCodeDestinationAPI=(
-            f'https://graphhopper.com/api/1/geocode'
-            f'?q={destination}'
-            f'&debug=true'
-            f'&key={apiKey}'
-        )
-        print(f"\n----geoCodeDestinationAPI---")
-        print(geoCodeDestinationAPI)
-        
-        # call geo code API
-        geoCodeDestinationAPIResponse = requests.get(geoCodeDestinationAPI).json()
-        destinationPosition=geoCodeDestinationAPIResponse['hits'][0]['point']
-        destinationLat=destinationPosition['lat']
-        destinationLng=destinationPosition['lng']
-        print(f"\n----geoCodeDestinationAPIResponse---")
-        print(f'[destinationLat,destinationLng]: [{destinationLat},{destinationLng}]')
-
-
-        # prepare destinationroute API
-        routeAPI = (
-            f'https://graphhopper.com/api/1/route'
-            f'?point={originLat},{originLng}'
-            f'&point={destinationLat},{destinationLng}'
-            f'&vehicle=car'
-            f'&instructions=false'
-            # f'&points_encoded=false'
-            f'&alternative_route.max_paths=1'
-            f'&key={apiKey}'
-        )
-        print(f"\n----routeAPI---")
-        print(routeAPI)
-
-
-        # call route API
-        routeAPIResponse = requests.get(routeAPI).json()
-        routeAPIResponse=routeAPIResponse['paths'][0]
-        wayPoints=polyline.decode(routeAPIResponse['points'])
-        print(f"\n----routeAPIResponse---")
-        print(routeAPIResponse)
-
-
-
-        # print waypoint for dev test plotting
-        print(f"\n---waypoint--{len(wayPoints)}----")
-        for wayPoint in wayPoints:
-            print(f"{wayPoint[0]},{wayPoint[1]}")
-        print(f"\n---traffic signals on point----")
     
-                
-        # smart traffic signals on the path
-        allTrafficSignals= TrafficSignal.objects.all()
-        trafficSignalsOnPath = []
-        trafficLightsOnPath = []
-        for trafficSignal in allTrafficSignals:
-            curr=isPointOnRoute(wayPoints, trafficSignal)
-            
-            if len(curr)>0:
-                trafficSignalsOnPath.append({
+    # call geo code API
+    geoCodeDestinationAPIResponse = requests.get(geoCodeDestinationAPI).json()
+    destinationPosition=geoCodeDestinationAPIResponse['hits'][0]['point']
+    destinationLat=destinationPosition['lat']
+    destinationLng=destinationPosition['lng']
+
+    print(f"\n----geoCodeDestinationAPIResponse---")
+    print(f'[destinationLat,destinationLng]: [{destinationLat},{destinationLng}]')
+
+    return [destinationLat, destinationLng] 
+
+
+
+def findRoute(lat1,lng1,lat2,lng2,apiKey):
+    routeAPI = (
+        f'https://graphhopper.com/api/1/route'
+        f'?point={lat1},{lng1}'
+        f'&point={lat2},{lng2}'
+        f'&vehicle=car'
+        f'&instructions=false'
+        # f'&points_encoded=false'
+        f'&alternative_route.max_paths=1'
+        f'&key={apiKey}'
+    )
+
+    # call route API
+    routeAPIResponse = requests.get(routeAPI).json()
+    routeAPIResponse=routeAPIResponse['paths'][0]
+    
+    # format data
+    routePolyline=routeAPIResponse['points']
+    routeWayPoints=polyline.decode(routePolyline)
+    travelDistance= round(routeAPIResponse['distance']/1000,1)
+    travelTime = routeAPIResponse['time']/60//1000
+
+    # print waypoint for dev test plotting
+    print(f"\n---waypoint--{len(routeWayPoints)}----")
+    for wayPoint in routeWayPoints:
+        print(f"{wayPoint[0]},{wayPoint[1]}")
+
+    return (travelTime,travelDistance,routePolyline,routeWayPoints)
+
+
+def findTrafficSignals(wayPoints):
+    # smart traffic signals on the path
+    allTrafficSignals= TrafficSignal.objects.all()
+    trafficSignalsOnPath,trafficLightsOnPath=[],[]
+    
+    print(f"\n----trafficsignals enroute---")
+
+    for trafficSignal in allTrafficSignals:
+        curr=isTrafficLightOnRoute(wayPoints, trafficSignal)
+        
+        if len(curr)>0:
+            trafficSignalsOnPath.append({
+                'lat':trafficSignal.lat,
+                'lng':trafficSignal.lng,
+                'location':trafficSignal.location
+            })
+            for trafficLight in curr:
+                trafficLightsOnPath.append({
                     'lat':trafficSignal.lat,
                     'lng':trafficSignal.lng,
-                    'location':trafficSignal.location
+                    'direction':trafficLight.direction,
+                    'location':trafficSignal.location,
                 })
-                for trafficLight in curr:
-                    trafficLightsOnPath.append({
-                        'lat':trafficSignal.lat,
-                        'lng':trafficSignal.lng,
-                        'direction':trafficLight.direction,
-                        'location':trafficSignal.location,
-                    })
 
-        # prepare the smart route response
-        smartRouteResponse={
-            'distanceKms': round(routeAPIResponse['distance']/1000,1),
-            'timeMins': routeAPIResponse['time']/60//1000,
-            'polyline':routeAPIResponse['points'],
-            'trafficSignalsOnPath': trafficSignalsOnPath,
-            'trafficLightsOnPath': trafficLightsOnPath,
-            'wayPoints': wayPoints,
+    return [trafficSignalsOnPath, trafficLightsOnPath]
+
+
+def findNearestHospital(lat,lng):
+    hospitals=Hospital.objects.all()
+    distance=math.inf
+    nearestHospital=None
+
+    for hospital in hospitals:
+        curr=geodesic((hospital.lat,hospital.lng),(lat,lng))
+        if curr<distance:
+            nearestHospital=hospital
+            distance=curr
+    
+    return nearestHospital
+
+
+
+@swagger_auto_schema(
+    operation_id='smart_route',
+    request_body=RoutingSerializer,
+    responses={
+        401: set_example(responses.unauthenticated_401),
+        200: set_example(responses.smart_route_200),
+    },
+    method='post'
+)
+@api_view(['post'])
+@permission_classes([IsAuthenticated])
+def SmartRouteView(request):
+    """
+        sample request 
+        {
+        "originLat": 11.215659,
+        "originLng": 77.357261,
+        "destination": "puluapatti, Tiruppur, Tamil Nadu"
         }
+    """
+
+    # check for valid input
+    serializer=RoutingSerializer(data=request.data)
+    if serializer.is_valid():
+        cleanData = serializer.data
+    else:
+        return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)
 
 
-        return Response(smartRouteResponse, status.HTTP_200_OK)
+    # prepare data
+    apiKey=config('MAPS_API_KEY')
+    destination=cleanData['destination']
+    originLat=cleanData['originLat']
+    originLng=cleanData['originLng']
+
+    # get destination route info from api
+    try:
+        destinationLat, destinationLng = geoCode(destination,apiKey)
+    except e:
+        traceback.print_exc()
+        return Response({'msg':'error geocoding destination'}, status.HTTP_400_BAD_REQUEST)
+
+    try:
+        desTime, desDistance, destinationPolyline, destinationWaypoints = findRoute(originLat,originLng,destinationLat,destinationLng,apiKey)
+    except:
+        traceback.print_exc()
+        return Response({'msg':'error fetching destination route'}, status.HTTP_400_BAD_REQUEST)
+
+    # find nearest hospital
+    nearestHospital=findNearestHospital(destinationLat,destinationLng)
+
+    # find hospital route info from api
+    try:
+        hospitalTime, hospitalDistance, hospitalPolyline, hospitalWaypoints = findRoute(
+            destinationLat,destinationLng,nearestHospital.lat,nearestHospital.lng,apiKey)
+    except:
+        traceback.print_exc()
+        return Response({'msg':'error fetching hospital route'}, status.HTTP_400_BAD_REQUEST)    
+
+    # find traffic signals on path
+    desSignals,desLights=findTrafficSignals(destinationWaypoints)
+    hosSignals,hosLights=findTrafficSignals(hospitalWaypoints)
+
+    # prepare the smart route response
+    smartRouteResponse={
+        'destinationTime':desTime,
+        'hospitalTime':hospitalTime,
+
+        'destinationDistance':desDistance,
+        'hospitalDistance':hospitalDistance,
+
+        'hospitalName': nearestHospital.location,
+        'hospitalLat': nearestHospital.lat,
+        'hospitalLng': nearestHospital.lng,
+
+        'destinationSignals': desSignals,
+        'hospitalSignals': hosSignals,
+        'destinationLights': desLights,
+        'hospitalLights': hosLights,
+
+        
+        'destinationPolyline':destinationPolyline,
+        'hospitalPolyline':hospitalPolyline,
+
+        'destinationWayPoints': destinationWaypoints,
+        'hospitalWayPoints': destinationWaypoints,
+    }
+
+    return Response(smartRouteResponse, status.HTTP_200_OK)
 
 
 
-class AllTrafficSignalsView(APIView):
-    permission_classes=[IsAuthenticated]
 
-    @swagger_auto_schema(
-        operation_id='registered_smart_traffic_signals',
-        responses={
-            401: set_example(responses.unauthenticated_401),
-        },
-    )
-    def get(self, request):
-        allTrafficSignals = [[x.lat,x.lng] for x in TrafficSignal.objects.all()]
-        return Response(allTrafficSignals, status.HTTP_200_OK)
+@swagger_auto_schema(
+    operation_id='registered_smart_traffic_signals',
+    responses={
+        401: set_example(responses.unauthenticated_401),
+    },
+    method='get'
+)
+@api_view(['get'])
+@permission_classes([IsAuthenticated])
+def AllTrafficSignalsView(request):
+    allTrafficSignals = [{
+        'lat':x.lat,
+        'lng':x.lng,
+        'name':x.location,
+    } for x in TrafficSignal.objects.all()]
+
+    print(f"\n----all trafficsignals---")
+    for trafficSignal in allTrafficSignals:
+        print(f"{trafficSignal['lat']},{trafficSignal['lng']}")
+
+    return Response(allTrafficSignals, status.HTTP_200_OK)
+
+
+
+@swagger_auto_schema(
+    operation_id='registered_hospitals',
+    responses={
+        401: set_example(responses.unauthenticated_401),
+    },
+    method='get'
+)
+@api_view(['get'])
+@permission_classes([IsAuthenticated])
+def AllHospitalsView(request):
+    allHospitals = [{
+        'lat':x.lat,
+        'lng':x.lng,
+        'name':x.location,
+    } for x in Hospital.objects.all()]
+    
+    print(f"\n----all hospitals---")
+    for hospital in allHospitals:
+        print(f"{hospital['lat']},{hospital['lng']}")
+
+    return Response(allHospitals, status.HTTP_200_OK)
