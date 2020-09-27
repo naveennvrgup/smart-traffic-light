@@ -7,7 +7,7 @@ class TrafficSignal(models.Model):
     lng=models.DecimalField(max_digits=9, decimal_places=6)
 
     def __str__(self):
-        return f"{self.location} - ({self.lat},{self.long})"
+        return f"{self.location} - ({self.lat},{self.lng})"
 
 class TrafficLight(models.Model):
     signal=models.ForeignKey(TrafficSignal, on_delete=models.CASCADE)
