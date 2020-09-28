@@ -15,7 +15,7 @@ schema_view = get_schema_view(
       ### General Instructions
 
       1. This is the server for minor project. 
-      1. Hosted **Node-Red simulator** can be found at http://54.194.87.141:1880/
+      1. Hosted **Node-Red simulator** can be found at http://<ip-of-this-server>:1880/
       1. Token authentication is used.
       1. Test user: (username: **a108**, password: **minor123**)
       1. Sample auth token (token of a108): **"Token dbef64a307efc2df5a8cab4827a8a65833f1b5e6**"
