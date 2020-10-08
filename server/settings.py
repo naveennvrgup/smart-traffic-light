@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     # 3rd party
     'corsheaders',
     'drf_yasg',
+    'django_json_widget',
 
     # token auth stuff
     'rest_framework',
