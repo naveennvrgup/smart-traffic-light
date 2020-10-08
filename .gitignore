@@ -103,3 +103,5 @@ media/
 *.pyc
 *.db
 *.pid
+
+IOTdevices/serverKey.json
