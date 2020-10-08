@@ -1,29 +1,38 @@
+from concurrent.futures import TimeoutError
 from google.cloud import pubsub_v1
+from publisher import SIGNAL_TOPIC_ID, PROJECT_ID
 
-# python cloudiot_pubsub_example_mqtt_device.py \
-#     --project_id=smart-traffic-lights-290011 \
-#     --registry_id=SmartTrafficLights \
-#     --device_id=sheldon \
-#     --private_key_file=rsa_private.pem \
-#     --algorithm=RS256
 
-# export GOOGLE_APPLICATION_CREDENTIALS="/home/naveen/Desktop/python-docs-samples/iot/api-client/end_to_end_example/naveenDevServiceAcc.json"
+def subscribeToSignal(id):
+    timeout = 3600
+    SUBSCRIPTION_ID = f"signal{id}"
 
-# TODO(developer)
-project_id = "smart-traffic-lights-290011"
-topic_id = "traffic-signals"
+    subscriber = pubsub_v1.SubscriberClient()
+    publisher = pubsub_v1.PublisherClient()
 
-publisher = pubsub_v1.PublisherClient()
-# The `topic_path` method creates a fully qualified identifier
-# in the form `projects/{project_id}/topics/{topic_id}`
-topic_path = publisher.topic_path(project_id, topic_id)
+    subscription_path = subscriber.subscription_path(PROJECT_ID, SUBSCRIPTION_ID)
+    topic_path=  publisher.topic_path(PROJECT_ID, SIGNAL_TOPIC_ID)
+    
+    subscription = subscriber.create_subscription(
+        request={"name": subscription_path, "topic": topic_path}
+    )
+    
+    def callback(message):
+        print("Received message: {}".format(message))
+        message.ack()
 
-for n in range(1, 10):
-    data = "Message number {}".format(n)
-    # Data must be a bytestring
-    data = data.encode("utf-8")
-    # When you publish a message, the client returns a future.
-    future = publisher.publish(topic_path, data)
-    print(future.result())
+    streaming_pull_future = subscriber.subscribe(subscription_path, callback=callback)
+    print("Listening for messages on {}..\n".format(subscription_path))
 
-print("Published messages.")
+    streaming_pull_future.result()
+
+    # with subscriber:
+    #     try:
+    #         # When `timeout` is not set, result() will block indefinitely,
+    #         # unless an exception is encountered first.
+    #         streaming_pull_future.result(timeout=timeout)
+    #     except TimeoutError:
+    #         streaming_pull_future.cancel()
+
+if __name__ == "__main__":
+    subscribeToSignal(1)
