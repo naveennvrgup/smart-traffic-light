@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic State Reporting</title>
+    <!-- <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+        integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous"> -->
+    <style>
+        td,
+        th {
+            padding: 3px;
+            border: 1px solid black;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+        .row{
+            display: flex;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="row">
+        <div class="col-6">
+            <h1 class="mt-3 text-center">Traffic Signals</h1>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Location</th>
+                        <th>ControlIndex</th>
+                        <th>ControlList</th>
+                        <th>Mode</th>
+                        <th>Timer</th>
+                    </tr>
+                </thead>
+                <tbody id='signals'>
+
+                </tbody>
+            </table>
+        </div>
+        <div class="col-6">
+            <h1 class="mt-3 text-center">Traffic Lights</h1>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>SignalId</th>
+                        <th>Direction</th>
+                        <th>Mode</th>
+                        <th>State</th>
+                    </tr>
+                </thead>
+                <tbody id='lights'>
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+
+
+    <script>
+        var signals = document.querySelector('#signals')
+        var lights = document.querySelector('#lights')
+
+        fetch('/maps/stateReporting/')
+            .then(d => d.json())
+            .then(d => {
+                console.log(d)
+
+                lightsData = d['trafficLights']
+                lights.innerHTML = lightsData.map(ele => {
+                    return `
+                    <tr>
+                        <td>${ele.id}</td>
+                        <td>${ele.signal}</td>
+                        <td>${ele.direction}</td>
+                        <td style='background:${ele.operationMode == 'Normal' ? '' : 'blue'}'>${ele.operationMode}</td>
+                        <td style='background:${ele.signalState == 'Red' ? 'red' : 'green'}'>${ele.signalState}</td>
+                    </tr>
+                    `
+                }).join('')
+
+
+                signalsData = d['trafficSignals']
+                signals.innerHTML = signalsData.map(ele => {
+                    return `
+                    <tr>
+                        <td>${ele.id}</td>
+                        <td>${ele.location}</td>
+                        <td>${ele.controlIndex}</td>
+                        <td>${ele.controlList}</td>
+                        <td style='background:${ele.operationMode == 'Normal' ? '' : 'blue'}'>${ele.operationMode}</td>
+                        <td>${ele.timer}</td>
+                    </tr>
+                    `
+                }).join('')
+            })
+    </script>
+</body>
+
+</html>

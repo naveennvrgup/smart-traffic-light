@@ -6,7 +6,7 @@ from utils.swagger import set_example
 from rest_framework.response import Response
 from rest_framework.decorators import permission_classes, api_view
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from .serializers import *
 from decouple import config
 import requests
@@ -350,3 +350,13 @@ def OnHospitalRouteView(request,routeId):
     print(routeId)
 
     return Response({'msg':'Switched to hospital route'}, status.HTTP_200_OK)
+
+
+
+@api_view(['get'])
+@permission_classes([AllowAny])
+def StateReportingView(request):
+    return Response({
+        'trafficLights':TrafficLightSerializer(TrafficLight.objects.all(),many=True).data,
+        'trafficSignals':TrafficSignalSerializer(TrafficSignal.objects.all(),many=True).data,
+    }, status=status.HTTP_200_OK)
