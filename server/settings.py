@@ -131,5 +131,9 @@ REST_FRAMEWORK = {
 
 # gcloud credentials
 import os
+from google.cloud import pubsub_v1
+
 os.environ['GOOGLE_APPLICATION_CREDENTIALS']=str(Path(__file__).parent.parent.absolute())+'/serverKey.json'
 PROJECT_ID = "smart-traffic-lights-290011"
+subscriber = pubsub_v1.SubscriberClient()
+publisher = pubsub_v1.PublisherClient()

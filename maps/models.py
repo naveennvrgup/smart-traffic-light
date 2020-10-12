@@ -1,7 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from google.cloud import pubsub_v1
-from server.settings import PROJECT_ID
+from server.settings import PROJECT_ID, subscriber, publisher
 
 
 class OperationMode(models.TextChoices):
@@ -14,12 +13,16 @@ class SignalState(models.TextChoices):
     GREEN = 'GR', _("Green")
 
 
+def controlListDefault():
+    return [[]]
+
+    
 class TrafficSignal(models.Model):
     location=models.CharField(max_length=100)
-    lat=models.DecimalField(max_digits=9, decimal_places=6)
-    lng=models.DecimalField(max_digits=9, decimal_places=6)
+    lat=models.DecimalField(max_digits=9, decimal_places=6, default=0)
+    lng=models.DecimalField(max_digits=9, decimal_places=6, default=0)
     
-    controlList=models.JSONField(default=list)
+    controlList=models.JSONField(default=controlListDefault)
     controlIndex=models.IntegerField(default=0)
     operationMode=models.CharField(max_length=2,choices=OperationMode.choices,default=OperationMode.NORMAL)
     timer=models.TimeField(auto_now=True)
@@ -34,8 +37,6 @@ class TrafficSignal(models.Model):
 
 
     def createTopic(self):
-        publisher = pubsub_v1.PublisherClient()
-
         TOPIC_ID= self.getTopicID()
         topic_path = publisher.topic_path(PROJECT_ID, TOPIC_ID)
 
@@ -47,7 +48,6 @@ class TrafficSignal(models.Model):
 
 
     def deleteTopic(self):
-        publisher = pubsub_v1.PublisherClient()
         topic_path = publisher.topic_path(PROJECT_ID, self.getTopicID())
 
         try:
@@ -75,8 +75,9 @@ class TrafficLight(models.Model):
 
 
     def createSubscription(self):    
-        subscriber = pubsub_v1.SubscriberClient()
-        publisher = pubsub_v1.PublisherClient()
+
+        # subscriber = pubsub_v1.SubscriberClient()
+        # publisher = pubsub_v1.PublisherClient()
         
         SUBSCRIPTION_ID= self.getSubscriptionID()
         TOPIC_ID = self.signal.getTopicID()
@@ -94,7 +95,7 @@ class TrafficLight(models.Model):
 
 
     def deleteSubscription(self):
-        subscriber = pubsub_v1.SubscriberClient()
+        # subscriber = pubsub_v1.SubscriberClient()
         subscription_path = subscriber.subscription_path(PROJECT_ID, self.getSubscriptionID())
 
         try:
