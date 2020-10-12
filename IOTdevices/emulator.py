@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------- #
+#                                    logging                                   #
+# ---------------------------------------------------------------------------- #
+
 import colorlog
 import logging
 
@@ -12,38 +16,30 @@ logger.setLevel('DEBUG')
 logger.addHandler(handler)
 
 
-from light import Light
-from signal import Signal
+# ---------------------------------------------------------------------------- #
+#                                 Smart Devices                                #
+# ---------------------------------------------------------------------------- #
+
+from IOTdevices.light import Light
+from IOTdevices.signal import Signal
 from collections import defaultdict
+
+
 lights=defaultdict(Light)
 signals=defaultdict(Signal)
 
 
-if __name__ == "__main__":
-    # setup django context
-    import sys
-    import os
-    import django
-    from pathlib import Path
+# ---------------------------------------------------------------------------- #
+#                                start emulation                               #
+# ---------------------------------------------------------------------------- #
+
+from maps.models import *
+import threading
+
+logger.debug(f"Started emulator provisioning")
 
 
-    projectDir = str(Path(__file__).parent.parent.absolute())
-    sys.path.append(projectDir)
-
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'server.settings'
-    os.environ['GOOGLE_APPLICATION_CREDENTIALS']=str(Path(__file__).parent.absolute())+"/serverKey.json"
-    django.setup()
-
-
-    # ---------------------------------------------------------------------------- #
-    #                                start emulation                               #
-    # ---------------------------------------------------------------------------- #
-
-    from maps.models import *
-    import threading
-
-    logger.debug(f"Started emulator provisioning")
-
+def run():
     for signal in TrafficSignal.objects.all():
         threading.Thread(target=Signal.signalSpawner, args=(signal,signals,logger)).start()
         firstOne=True
@@ -56,11 +52,6 @@ if __name__ == "__main__":
                 threading.Thread(target=Light.lightSpawner, args=(light,lights,logger)).start()
 
 
-    logger.debug(f"Finished emulator Provisioning:")
-    logger.debug(f"Signals({len(signals)})")
-    logger.debug(f"Lights({len(lights)})")
-    
-    # from publisher import publishToSignalTopic
-    # publishToSignalTopic('asfasdf')
-    from subscriber import subscribeToSignal
-    subscribeToSignal(1)
+logger.debug(f"Finished emulator Provisioning:")
+logger.debug(f"Signals({len(signals)})")
+logger.debug(f"Lights({len(lights)})")
