@@ -36,11 +36,12 @@ signals=defaultdict(Signal)
 from maps.models import *
 import threading
 
-logger.debug(f"Started emulator provisioning")
 
 
 def run():
-    for signal in TrafficSignal.objects.all():
+    logger.debug(f"Started emulator provisioning")
+    
+    for signal in TrafficSignal.objects.all()[:1]:
         threading.Thread(target=Signal.signalSpawner, args=(signal,signals,logger)).start()
         firstOne=True
         
@@ -52,6 +53,6 @@ def run():
                 threading.Thread(target=Light.lightSpawner, args=(light,lights,logger)).start()
 
 
-logger.debug(f"Finished emulator Provisioning:")
-logger.debug(f"Signals({len(signals)})")
-logger.debug(f"Lights({len(lights)})")
+    logger.debug(f"Finished emulator Provisioning:")
+    logger.debug(f"Signals({len(signals)})")
+    logger.debug(f"Lights({len(lights)})")

@@ -17,7 +17,8 @@
         table {
             border-collapse: collapse;
         }
-        .row{
+
+        .row {
             display: flex;
         }
     </style>
@@ -69,14 +70,27 @@
         var signals = document.querySelector('#signals')
         var lights = document.querySelector('#lights')
 
-        fetch('/maps/stateReporting/')
-            .then(d => d.json())
-            .then(d => {
-                console.log(d)
+        var parseControls = (controls) => {
+            green=controls['green'].join(', ')
+            red=controls['red'].join(', ')
+            return `G(${green}) R(${red})`
+        }
 
-                lightsData = d['trafficLights']
-                lights.innerHTML = lightsData.map(ele => {
-                    return `
+        var parseControlList = (controlList) => {
+            return controlList
+                .map(controls=> `<div>${parseControls(controls)}</div>`)
+                .join('')
+        }
+
+        var fetchReport = () => {
+            fetch('/maps/stateReporting/')
+                .then(d => d.json())
+                .then(d => {
+                    console.log(d)
+
+                    lightsData = d['trafficLights']
+                    lights.innerHTML = lightsData.map(ele => {
+                        return `
                     <tr>
                         <td>${ele.id}</td>
                         <td>${ele.signal}</td>
@@ -85,23 +99,27 @@
                         <td style='background:${ele.signalState == 'Red' ? 'red' : 'green'}'>${ele.signalState}</td>
                     </tr>
                     `
-                }).join('')
+                    }).join('')
 
 
-                signalsData = d['trafficSignals']
-                signals.innerHTML = signalsData.map(ele => {
-                    return `
+                    signalsData = d['trafficSignals']
+                    signals.innerHTML = signalsData.map(ele => {
+                        return `
                     <tr>
                         <td>${ele.id}</td>
                         <td>${ele.location}</td>
                         <td>${ele.controlIndex}</td>
-                        <td>${ele.controlList}</td>
+                        <td>${parseControlList(ele.controlList)}</td>
                         <td style='background:${ele.operationMode == 'Normal' ? '' : 'blue'}'>${ele.operationMode}</td>
                         <td>${ele.timer}</td>
                     </tr>
                     `
-                }).join('')
-            })
+                    }).join('')
+                })
+        }
+        
+        fetchReport()
+        // setInterval(fetchReport, 1000)
     </script>
 </body>
 
