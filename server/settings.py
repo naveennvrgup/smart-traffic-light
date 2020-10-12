@@ -2,12 +2,6 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'vh-7q#*n)@5g$2cd+c4f8&+vt0@az562ll%h69qc3)3!yj2tih'
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -42,6 +36,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'drf_yasg',
     'django_json_widget',
+    'django_extensions',
 
     # token auth stuff
     'rest_framework',
@@ -117,22 +112,13 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
-# https://docs.djangoproject.com/en/3.1/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'Asia/Calcutta'
-
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
 STATIC_ROOT='./static/'
@@ -142,3 +128,8 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ]
 }
+
+# gcloud credentials
+import os
+os.environ['GOOGLE_APPLICATION_CREDENTIALS']=str(Path(__file__).parent.parent.absolute())+'/serverKey.json'
+PROJECT_ID = "smart-traffic-lights-290011"

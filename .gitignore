@@ -104,4 +104,4 @@ media/
 *.db
 *.pid
 
-IOTdevices/serverKey.json
+**/serverKey.json
