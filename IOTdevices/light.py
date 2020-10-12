@@ -2,6 +2,8 @@ from google.cloud import pubsub_v1
 from server.settings import PROJECT_ID, subscriber, publisher
 from IOTdevices.actions import *
 import json
+from datetime import datetime
+from maps.models import *
 
 
 class Light:
@@ -25,16 +27,28 @@ class Light:
 
         try:
             msg=json.loads(msg.data)
-            self.log(msg)
             if msg['recipient'] in ['all',self.dbObj.getSubscriptionID()]:
                 if msg['actionType']==SPAWN:
                     self.onSpwanHandler(msg['payload'])
-        except:
-            self.log(msg.data)
+        except Exception as err:
+            self.log(err)
+            self.log(msg)
     
 
     def onSpwanHandler(self, payload):
-        self.log(payload)
+        self.timer=datetime.strptime(payload['timer'], "%H:%M:%S.%f")
+        self.controlList=payload['controlList']
+        self.controlLen=len(self.controlList)
+        
+        minsPassed=(datetime.now() - self.timer).seconds//60
+        self.controlIndex=minsPassed%self.controlLen
+
+        self.log(self.controlList[self.controlIndex])
+        if self.dbObj.id in self.controlList[self.controlIndex]['green']:
+            self.dbObj.signalState = SignalState.RED
+        else:
+            self.dbObj.signalState = SignalState.GREEN
+        self.dbObj.save()
 
 
     def log(self,msg):

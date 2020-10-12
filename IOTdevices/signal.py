@@ -1,4 +1,5 @@
 from server.settings import PROJECT_ID, subscriber, publisher
+from maps.models import *
 import json
 import time
 from IOTdevices.actions import *
@@ -11,7 +12,7 @@ class Signal:
         signals[dbObj.id]=self
        
         self.log("spwaned")
-        self.startSpawnSequence()
+        # self.startSpawnSequence()
 
 
     def startSpawnSequence(self):

@@ -1,0 +1,11 @@
+{
+    "actionType":"SPAWN",
+    "recipient": "STL00001",
+    "payload": {
+    "timer": "14:02:36.283987", 
+    "controlList": [
+        {"green": [2, 4], "red": [1, 3]}, 
+        {"green": [1, 3], "red": [2, 4]}
+        ]
+    }
+}
