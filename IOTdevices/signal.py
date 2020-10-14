@@ -15,7 +15,7 @@ class Signal:
         self.startSpawnSequence()
 
     def startSpawnSequence(self):
-        time.sleep(2)
+        time.sleep(1)
         self.sendMsgHandler(SPAWN, 'all', {
             'timer': str(self.db_obj.timer),
             'controlList': self.db_obj.controlList
@@ -30,8 +30,8 @@ class Signal:
             'payload': payload
         }
 
-        bundleJSON = json.dumps(bundle).encode("utf-8")
-        publisher.publish(topic_path, bundleJSON)
+        bundle_json = json.dumps(bundle).encode("utf-8")
+        publisher.publish(topic_path, bundle_json)
 
     def log(self, msg):
         logger.debug(f"{self.db_obj.getTopicID()} >>> {msg}")

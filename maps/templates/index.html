@@ -67,22 +67,22 @@
 
 
     <script>
-        var signals = document.querySelector('#signals')
-        var lights = document.querySelector('#lights')
+        const signals = document.querySelector('#signals')
+        const lights = document.querySelector('#lights')
 
-        var parseControls = (controls) => {
+        const parseControls = (controls) => {
             green=controls['green'].join(', ')
             red=controls['red'].join(', ')
             return `G(${green}) R(${red})`
         }
 
-        var parseControlList = (controlList) => {
+        const parseControlList = (controlList) => {
             return controlList
                 .map(controls=> `<div>${parseControls(controls)}</div>`)
                 .join('')
         }
 
-        var fetchReport = () => {
+        const fetchReport = () => {
             fetch('/maps/stateReporting/')
                 .then(d => d.json())
                 .then(d => {
@@ -118,8 +118,8 @@
                 })
         }
         
-        fetchReport()
-        // setInterval(fetchReport, 1000)
+        // fetchReport()
+        setInterval(fetchReport, 1000)
     </script>
 </body>
 
