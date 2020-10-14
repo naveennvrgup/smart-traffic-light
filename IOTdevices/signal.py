@@ -1,35 +1,37 @@
-import json
-import time
-
-from .logger import logger
-from .light import Light
 import threading
+import time
+import json
+
+from server.settings import PROJECT_ID, publisher
+from .actions import *
+from .light import Light
+from .logger import logger
+
 
 class Signal:
     def __init__(self, db_obj):
         self.db_obj = db_obj
         self.log("spawned")
-        # self.startSpawnSequence()
+        self.startSpawnSequence()
 
-    # def startSpawnSequence(self):
-    #     time.sleep(2)
-    #     self.sendMsgHandler(SPAWN, 'all', {
-    #         'timer': str(self.db_obj.timer),
-    #         'controlList': self.db_obj.controlList
-    #     })
+    def startSpawnSequence(self):
+        time.sleep(2)
+        self.sendMsgHandler(SPAWN, 'all', {
+            'timer': str(self.db_obj.timer),
+            'controlList': self.db_obj.controlList
+        })
 
-    # def sendMsgHandler(self, action_type, recipient, payload):
-    #     topic_path = publisher.topic_path(PROJECT_ID, self.db_obj.getTopicID())
-    #
-    #     msg = {
-    #         'action_type': action_type,
-    #         'recipient': recipient,
-    #         'payload': payload
-    #     }
-    #
-    #     msg = json.dumps(msg)
-    #     msg = msg.encode("utf-8")
-    #     publisher.publish(topic_path, msg)
+    def sendMsgHandler(self, action_type, recipient, payload):
+        topic_path = publisher.topic_path(PROJECT_ID, self.db_obj.getTopicID())
+
+        bundle = {
+            'action_type': action_type,
+            'recipient': recipient,
+            'payload': payload
+        }
+
+        bundleJSON = json.dumps(bundle).encode("utf-8")
+        publisher.publish(topic_path, bundleJSON)
 
     def log(self, msg):
         logger.debug(f"{self.db_obj.getTopicID()} >>> {msg}")
