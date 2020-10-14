@@ -1,0 +1,7 @@
+{
+  "ACTION_TYPE": "OVER_RIDE",
+  "RECIPIENT": "STL00004",
+  "PAYLOAD": {
+    "OPERATION_COLOR": "GR"
+  }
+}

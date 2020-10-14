@@ -29,9 +29,13 @@ class Light:
 
         try:
             msg = json.loads(msg.data)
-            if msg['recipient'] in ['all', self.db_obj.getSubscriptionID()]:
-                if msg['action_type'] == SPAWN:
-                    self.on_spawn_handler(msg['payload'])
+            if msg[RECIPIENT] in ['all', self.db_obj.getSubscriptionID()]:
+                if msg[ACTION_TYPE] == SPAWN:
+                    self.on_spawn_handler(msg[PAYLOAD])
+                elif msg[ACTION_TYPE] == OVER_RIDE:
+                    self.on_over_ride_handler(msg[PAYLOAD])
+                elif msg[ACTION_TYPE] == NORMAL_RIDE:
+                    self.on_normal_ride_handler(msg[PAYLOAD])
         except Exception as err:
             self.log('exception')
             self.log(traceback.print_exc(err))
@@ -44,8 +48,10 @@ class Light:
         return control_index
 
     def update_light(self):
-        curr_control_index = self.get_control_index()
+        if self.db_obj.operationMode==OperationMode.OVERRIDE:
+            return
 
+        curr_control_index = self.get_control_index()
         if curr_control_index == self.prev_control_index:
             return
 
@@ -54,9 +60,24 @@ class Light:
         curr_signal_state = SignalState.RED \
             if self.db_obj.id in curr_control['green'] \
             else SignalState.GREEN
-        self.log(curr_signal_state)
+        # self.log(curr_signal_state)
         self.db_obj.signalState = curr_signal_state
         self.db_obj.save()
+
+    def on_over_ride_handler(self, payload):
+        self.db_obj.operationMode = OperationMode.OVERRIDE
+        self.db_obj.signalState = payload[OPERATION_COLOR]
+        self.db_obj.save()
+        # log
+        self.log(OperationMode.OVERRIDE + " " + payload[OPERATION_COLOR])
+
+    def on_normal_ride_handler(self, payload):
+        self.db_obj.operationMode = OperationMode.NORMAL
+        self.db_obj.save()
+        # update
+        self.update_light()
+        # log
+        self.log(OperationMode.NORMAL)
 
     def on_spawn_handler(self, payload):
         self.log(payload)

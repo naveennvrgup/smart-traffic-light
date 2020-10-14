@@ -25,9 +25,9 @@ class Signal:
         topic_path = publisher.topic_path(PROJECT_ID, self.db_obj.getTopicID())
 
         bundle = {
-            'action_type': action_type,
-            'recipient': recipient,
-            'payload': payload
+            ACTION_TYPE: action_type,
+            RECIPIENT: recipient,
+            PAYLOAD: payload
         }
 
         bundle_json = json.dumps(bundle).encode("utf-8")
