@@ -16,32 +16,28 @@ class SignalState(models.TextChoices):
 def controlListDefault():
     return [[]]
 
-    
-class TrafficSignal(models.Model):
-    location=models.CharField(max_length=100)
-    lat=models.DecimalField(max_digits=9, decimal_places=6, default=0)
-    lng=models.DecimalField(max_digits=9, decimal_places=6, default=0)
-    
-    controlList=models.JSONField(default=controlListDefault)
-    controlIndex=models.IntegerField(default=0)
-    operationMode=models.CharField(max_length=2,choices=OperationMode.choices,default=OperationMode.NORMAL)
-    timer=models.TimeField(auto_now=True)
 
+class TrafficSignal(models.Model):
+    location = models.CharField(max_length=100)
+    lat = models.DecimalField(max_digits=9, decimal_places=6, default=0)
+    lng = models.DecimalField(max_digits=9, decimal_places=6, default=0)
+
+    controlList = models.JSONField(default=controlListDefault)
+    controlIndex = models.IntegerField(default=0)
+    operationMode = models.CharField(max_length=2, choices=OperationMode.choices, default=OperationMode.NORMAL)
+    timer = models.TimeField(auto_now=True)
 
     def __str__(self):
         return f"#{self.id} - {self.location} - ({self.lat},{self.lng})"
 
-
     def getTopicID(self):
-        return "STS"+str(self.id).zfill(5)
-
+        return "STS" + str(self.id).zfill(5)
 
     def getSubscriptionID(self):
-        return "STM"+str(self.id).zfill(5)
-
+        return "STM" + str(self.id).zfill(5)
 
     def createTopic(self):
-        TOPIC_ID= self.getTopicID()
+        TOPIC_ID = self.getTopicID()
         topic_path = publisher.topic_path(PROJECT_ID, TOPIC_ID)
 
         try:
@@ -49,7 +45,6 @@ class TrafficSignal(models.Model):
             print(f"created topic {TOPIC_ID}")
         except Exception as err:
             print(err)
-
 
     def deleteTopic(self):
         topic_path = publisher.topic_path(PROJECT_ID, self.getTopicID())
@@ -60,13 +55,12 @@ class TrafficSignal(models.Model):
         except Exception as err:
             print(err)
 
-
-    def createSubscription(self):    
-        SUBSCRIPTION_ID= self.getSubscriptionID()
+    def createSubscription(self):
+        SUBSCRIPTION_ID = self.getSubscriptionID()
         TOPIC_ID = self.getTopicID()
-        
+
         subscription_path = subscriber.subscription_path(PROJECT_ID, SUBSCRIPTION_ID)
-        topic_path=  publisher.topic_path(PROJECT_ID, TOPIC_ID)
+        topic_path = publisher.topic_path(PROJECT_ID, TOPIC_ID)
 
         try:
             subscription = subscriber.create_subscription(
@@ -75,7 +69,6 @@ class TrafficSignal(models.Model):
             print(f"created subscription {SUBSCRIPTION_ID}")
         except Exception as err:
             print(err)
-
 
     def deleteSubscription(self):
         subscription_path = subscriber.subscription_path(PROJECT_ID, self.getSubscriptionID())
@@ -87,29 +80,25 @@ class TrafficSignal(models.Model):
             print(err)
 
 
-
 class TrafficLight(models.Model):
-    signal=models.ForeignKey(TrafficSignal, on_delete=models.CASCADE)
-    direction=models.IntegerField()
-    
-    operationMode=models.CharField(max_length=2,choices=OperationMode.choices,default=OperationMode.NORMAL)
-    signalState=models.CharField(max_length=2,choices=SignalState.choices,default=SignalState.RED)
+    signal = models.ForeignKey(TrafficSignal, on_delete=models.CASCADE)
+    direction = models.IntegerField()
 
+    operationMode = models.CharField(max_length=2, choices=OperationMode.choices, default=OperationMode.NORMAL)
+    signalState = models.CharField(max_length=2, choices=SignalState.choices, default=SignalState.RED)
 
     def __str__(self):
         return f"#{self.id} - {self.direction} - {self.signal}"
 
-
     def getSubscriptionID(self):
-        return "STL"+str(self.id).zfill(5)
+        return "STL" + str(self.id).zfill(5)
 
-
-    def createSubscription(self):    
-        SUBSCRIPTION_ID= self.getSubscriptionID()
+    def createSubscription(self):
+        SUBSCRIPTION_ID = self.getSubscriptionID()
         TOPIC_ID = self.signal.getTopicID()
-        
+
         subscription_path = subscriber.subscription_path(PROJECT_ID, SUBSCRIPTION_ID)
-        topic_path=  publisher.topic_path(PROJECT_ID, TOPIC_ID)
+        topic_path = publisher.topic_path(PROJECT_ID, TOPIC_ID)
 
         try:
             subscription = subscriber.create_subscription(
@@ -118,7 +107,6 @@ class TrafficLight(models.Model):
             print(f"created subscription {SUBSCRIPTION_ID}")
         except Exception as err:
             print(err)
-
 
     def deleteSubscription(self):
         subscription_path = subscriber.subscription_path(PROJECT_ID, self.getSubscriptionID())
@@ -131,9 +119,9 @@ class TrafficLight(models.Model):
 
 
 class Hospital(models.Model):
-    location=models.CharField(max_length=100)
-    lat=models.DecimalField(max_digits=9, decimal_places=6)
-    lng=models.DecimalField(max_digits=9, decimal_places=6)
+    location = models.CharField(max_length=100)
+    lat = models.DecimalField(max_digits=9, decimal_places=6)
+    lng = models.DecimalField(max_digits=9, decimal_places=6)
 
     def __str__(self):
         return f"#{self.id} - {self.location} - ({self.lat},{self.lng})"

@@ -105,3 +105,4 @@ media/
 *.pid
 
 **/serverKey.json
+.idea/
