@@ -254,6 +254,12 @@ def SmartRouteView(request):
     # override the traffic lights on the destination route
     override_signals([x['id'] for x in desSignals], [x['id'] for x in desLights])
 
+    # save the hospital route override in the future
+    hos_route = HospitalRoute.objects.create(route_info={
+        "signals": [x['id'] for x in desSignals],
+        "lights": [x['id'] for x in desLights]
+    })
+
     # prepare the smart route response
     smartRouteResponse = {
         'destinationTime': desTime,
@@ -265,7 +271,7 @@ def SmartRouteView(request):
         'hospitalName': nearestHospital.location,
         'hospitalLat': nearestHospital.lat,
         'hospitalLng': nearestHospital.lng,
-        'hospitalRouteId': 12,
+        'hospitalRouteId': hos_route.id,
 
         'destinationSignals': desSignals,
         'hospitalSignals': hosSignals,

@@ -155,3 +155,10 @@ class Hospital(models.Model):
 
     def __str__(self):
         return f"#{self.id} - {self.location} - ({self.lat},{self.lng})"
+
+
+class HospitalRoute(models.Model):
+    route_info = models.JSONField()
+
+    def __str__(self):
+        return f"#{self.id} - {self.route_info}"

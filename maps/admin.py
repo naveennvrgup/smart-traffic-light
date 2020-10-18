@@ -1,9 +1,11 @@
 from django.contrib import admin
-from .models import *
-from django.db import models
 from django_json_widget.widgets import JSONEditorWidget
 
+from .models import *
+
+
 @admin.register(TrafficSignal)
+@admin.register(HospitalRoute)
 class YourModelAdmin(admin.ModelAdmin):
     formfield_overrides = {
         models.JSONField: {'widget': JSONEditorWidget},
