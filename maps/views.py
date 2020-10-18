@@ -13,7 +13,6 @@ from rest_framework.response import Response
 
 from utils.swagger import set_example
 from . import responses
-from .models import *
 from .serializers import *
 
 
@@ -147,26 +146,31 @@ def findTrafficSignals(wayPoints):
         # represents signal on route
         if len(curr) > 0:
             trafficSignalsOnPath.append({
+                'id': trafficSignal.id,
                 'lat': trafficSignal.lat,
                 'lng': trafficSignal.lng,
                 'location': trafficSignal.location
             })
             for trafficLight in curr:
                 trafficLightsOnPath.append({
+                    'id': trafficLight.id,
                     'lat': trafficSignal.lat,
                     'lng': trafficSignal.lng,
                     'direction': trafficLight.direction,
                     'location': trafficSignal.location,
                 })
 
-            # send a override signal to the IoT
-            for traffic_light in trafficSignal.trafficlight_set.all():
-                if traffic_light in curr:
-                    traffic_light.over_ride_to(GREEN)
-                else:
-                    traffic_light.over_ride_to(RED)
-
     return [trafficSignalsOnPath, trafficLightsOnPath]
+
+
+def override_signals(signals, lights):
+    for signal in signals:
+        signal_obj = TrafficSignal.objects.get(id=signal)
+        for light_obj in signal_obj.trafficlight_set.all():
+            if light_obj.id in lights:
+                light_obj.over_ride_to(GREEN)
+            else:
+                light_obj.over_ride_to(RED)
 
 
 def findNearestHospital(lat, lng):
@@ -243,9 +247,12 @@ def SmartRouteView(request):
         traceback.print_exc()
         return Response({'msg': 'error fetching hospital route'}, status.HTTP_400_BAD_REQUEST)
 
-        # find traffic signals on path
+    # find traffic signals on path
     desSignals, desLights = findTrafficSignals(destinationWaypoints)
     hosSignals, hosLights = findTrafficSignals(hospitalWaypoints)
+
+    # override the traffic lights on the destination route
+    override_signals([x['id'] for x in desSignals], [x['id'] for x in desLights])
 
     # prepare the smart route response
     smartRouteResponse = {
