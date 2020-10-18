@@ -1,5 +1,9 @@
+import json
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
+from IOTdevices.actions import *
 from server.settings import PROJECT_ID, subscriber, publisher
 
 
@@ -107,6 +111,18 @@ class TrafficLight(models.Model):
             print(f"created subscription {SUBSCRIPTION_ID}")
         except Exception as err:
             print(err)
+
+    def switchToNormalRide(self):
+        topic_path = publisher.topic_path(PROJECT_ID, self.signal.getTopicID())
+
+        bundle = {
+            ACTION_TYPE: NORMAL_RIDE,
+            RECIPIENT: self.getSubscriptionID(),
+            PAYLOAD: {}
+        }
+
+        bundle_json = json.dumps(bundle).encode("utf-8")
+        publisher.publish(topic_path, bundle_json)
 
     def deleteSubscription(self):
         subscription_path = subscriber.subscription_path(PROJECT_ID, self.getSubscriptionID())
