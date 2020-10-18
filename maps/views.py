@@ -256,8 +256,8 @@ def SmartRouteView(request):
 
     # save the hospital route override in the future
     hos_route = HospitalRoute.objects.create(route_info={
-        "signals": [x['id'] for x in desSignals],
-        "lights": [x['id'] for x in desLights]
+        "signals": [x['id'] for x in hosSignals],
+        "lights": [x['id'] for x in hosLights]
     })
 
     # prepare the smart route response
@@ -360,7 +360,10 @@ def TurnTrafficSignalNormalView(request, signalId):
 @api_view(['get'])
 @permission_classes([IsAuthenticated])
 def OnHospitalRouteView(request, routeId):
-    print(routeId)
+    hospital_route_obj = HospitalRoute.objects.get(id=routeId).route_info
+    signals = hospital_route_obj['signals']
+    lights = hospital_route_obj['lights']
+    override_signals(signals, lights)
 
     return Response({'msg': 'Switched to hospital route'}, status.HTTP_200_OK)
 
