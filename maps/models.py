@@ -112,13 +112,27 @@ class TrafficLight(models.Model):
         except Exception as err:
             print(err)
 
-    def switchToNormalRide(self):
+    def switch_to_normal_ride(self):
         topic_path = publisher.topic_path(PROJECT_ID, self.signal.getTopicID())
 
         bundle = {
             ACTION_TYPE: NORMAL_RIDE,
             RECIPIENT: self.getSubscriptionID(),
             PAYLOAD: {}
+        }
+
+        bundle_json = json.dumps(bundle).encode("utf-8")
+        publisher.publish(topic_path, bundle_json)
+
+    def over_ride_to(self, over_ride_color):
+        topic_path = publisher.topic_path(PROJECT_ID, self.signal.getTopicID())
+
+        bundle = {
+            ACTION_TYPE: OVER_RIDE,
+            RECIPIENT: self.getSubscriptionID(),
+            PAYLOAD: {
+                OPERATION_COLOR: over_ride_color
+            }
         }
 
         bundle_json = json.dumps(bundle).encode("utf-8")

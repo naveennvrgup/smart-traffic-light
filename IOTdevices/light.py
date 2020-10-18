@@ -1,4 +1,3 @@
-import json
 import traceback
 from _datetime import datetime
 
@@ -48,7 +47,7 @@ class Light:
         return control_index
 
     def update_light(self):
-        if self.db_obj.operationMode==OperationMode.OVERRIDE:
+        if self.db_obj.operationMode == OperationMode.OVERRIDE:
             return
 
         curr_control_index = self.get_control_index()
