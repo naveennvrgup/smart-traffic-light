@@ -14,7 +14,6 @@ class Light:
         self.control_list = None
         self.timer = None
         self.prev_control_index = None
-        self.update_interval = 5
 
         # subscribe to the STS topics
         subscription_path = subscriber.subscription_path(PROJECT_ID, self.db_obj.getSubscriptionID())
@@ -41,7 +40,7 @@ class Light:
             self.log(msg)
 
     def get_control_index(self):
-        minutes_passed = (datetime.now() - self.timer).seconds // self.update_interval
+        minutes_passed = (datetime.now() - self.timer).seconds // RESET_INTERVAL
         control_len = len(self.control_list)
         control_index = minutes_passed % control_len
         return control_index

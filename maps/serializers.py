@@ -1,5 +1,7 @@
 from rest_framework import serializers
+
 from .models import *
+
 
 class RoutingSerializer(serializers.Serializer):
     originLat = serializers.FloatField(allow_null=False)
@@ -8,26 +10,30 @@ class RoutingSerializer(serializers.Serializer):
 
 
 class TrafficLightSerializer(serializers.ModelSerializer):
-    operationMode  = serializers.SerializerMethodField()
-    signalState = serializers.SerializerMethodField() 
+    operationMode = serializers.SerializerMethodField()
+    signalState = serializers.SerializerMethodField()
 
-    def get_operationMode(self,obj):
+    def get_operationMode(self, obj):
         return obj.get_operationMode_display()
 
-    def get_signalState(self,obj):
+    def get_signalState(self, obj):
         return obj.get_signalState_display()
-    
+
     class Meta:
         model = TrafficLight
-        fields='__all__'
+        fields = '__all__'
 
 
 class TrafficSignalSerializer(serializers.ModelSerializer):
-    operationMode  = serializers.SerializerMethodField()
+    operationMode = serializers.SerializerMethodField()
+    lights = serializers.SerializerMethodField()
 
-    def get_operationMode(self,obj):
+    def get_lights(self, obj: TrafficSignal):
+        return TrafficLightSerializer(obj.trafficlight_set.all(), many=True).data
+
+    def get_operationMode(self, obj):
         return obj.get_operationMode_display()
 
     class Meta:
         model = TrafficSignal
-        fields='__all__'
+        fields = '__all__'

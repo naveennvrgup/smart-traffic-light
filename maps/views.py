@@ -371,7 +371,8 @@ def OnHospitalRouteView(request, routeId):
 @api_view(['get'])
 @permission_classes([AllowAny])
 def StateReportingView(request):
+    signals = TrafficSignalSerializer(TrafficSignal.objects.all(), many=True).data
     return Response({
-        'trafficLights': TrafficLightSerializer(TrafficLight.objects.all(), many=True).data,
-        'trafficSignals': TrafficSignalSerializer(TrafficSignal.objects.all(), many=True).data,
+        'signals': signals,
+        'resetInterval': RESET_INTERVAL,
     }, status=status.HTTP_200_OK)
