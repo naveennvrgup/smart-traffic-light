@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -27,12 +28,10 @@ class TrafficSignal(models.Model):
     lng = models.DecimalField(max_digits=9, decimal_places=6, default=0)
 
     controlList = models.JSONField(default=controlListDefault)
-    controlIndex = models.IntegerField(default=0)
-    operationMode = models.CharField(max_length=2, choices=OperationMode.choices, default=OperationMode.NORMAL)
-    timer = models.TimeField(auto_now=True)
+    timer = models.DateTimeField(default=datetime.now(), editable=True)
 
     def __str__(self):
-        return f"#{self.id} - {self.location} - ({self.lat},{self.lng})"
+        return f"#{self.id} - {self.location} - ({self.lat},{self.lng}) - {self.timer}"
 
     def getTopicID(self):
         return "STS" + str(self.id).zfill(5)

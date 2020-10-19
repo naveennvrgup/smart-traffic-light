@@ -25,14 +25,10 @@ class TrafficLightSerializer(serializers.ModelSerializer):
 
 
 class TrafficSignalSerializer(serializers.ModelSerializer):
-    operationMode = serializers.SerializerMethodField()
     lights = serializers.SerializerMethodField()
 
     def get_lights(self, obj: TrafficSignal):
         return TrafficLightSerializer(obj.trafficlight_set.all(), many=True).data
-
-    def get_operationMode(self, obj):
-        return obj.get_operationMode_display()
 
     class Meta:
         model = TrafficSignal

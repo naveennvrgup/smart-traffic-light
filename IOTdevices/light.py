@@ -40,9 +40,9 @@ class Light:
             self.log(msg)
 
     def get_control_index(self):
-        minutes_passed = (datetime.now() - self.timer).seconds // RESET_INTERVAL
+        slots_passed = (datetime.now() - self.timer).seconds // RESET_INTERVAL
         control_len = len(self.control_list)
-        control_index = minutes_passed % control_len
+        control_index = slots_passed % control_len
         return control_index
 
     def update_light(self):
@@ -80,7 +80,7 @@ class Light:
     def on_spawn_handler(self, payload):
         self.log(payload)
 
-        self.timer = datetime.strptime(payload['timer'], "%H:%M:%S.%f")
+        self.timer = datetime.fromisoformat(payload['timer'])
         self.control_list = payload['controlList']
 
         RepeatedTimer(1, self.update_light)
