@@ -1,6 +1,8 @@
 import traceback
 from _datetime import datetime
 
+from pytz import timezone
+
 from maps.models import *
 from .actions import *
 from .logger import logger
@@ -40,7 +42,13 @@ class Light:
             self.log(msg)
 
     def get_control_index(self):
-        slots_passed = (datetime.now() - self.timer).seconds // RESET_INTERVAL
+        timezone_india = timezone('Asia/Calcutta')
+        curr_time = datetime.now(timezone_india)
+
+        slots_passed = (curr_time - self.timer).seconds // RESET_INTERVAL
+        if self.db_obj.id == 11:
+            print(slots_passed, curr_time, self.timer)
+
         control_len = len(self.control_list)
         control_index = slots_passed % control_len
         return control_index
