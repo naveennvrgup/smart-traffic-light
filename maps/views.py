@@ -345,7 +345,10 @@ def AllHospitalsView(request):
 @api_view(['get'])
 @permission_classes([IsAuthenticated])
 def TurnTrafficSignalNormalView(request, signalId):
-    print(signalId)
+    signal = TrafficSignal.objects.get(id=signalId)
+
+    for light in signal.trafficlight_set.all():
+        light.switch_to_normal_ride()
 
     return Response({'msg': 'Traffic Signal returned to normal'}, status.HTTP_200_OK)
 
