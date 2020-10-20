@@ -379,3 +379,14 @@ def StateReportingView(request):
         'signals': signals,
         'resetInterval': RESET_INTERVAL,
     }, status=status.HTTP_200_OK)
+
+
+@api_view(['get'])
+@permission_classes([IsAuthenticated])
+def RevokeOverRideView(request):
+    for light in TrafficLight.objects.all():
+        light.switch_to_normal_ride()
+
+    return Response({
+        'msg': "All over rides revoked successfully",
+    }, status=status.HTTP_200_OK)
