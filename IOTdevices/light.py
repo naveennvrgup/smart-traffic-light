@@ -1,6 +1,7 @@
 import traceback
 from _datetime import datetime
 
+import requests
 from pytz import timezone
 
 from maps.models import *
@@ -10,18 +11,11 @@ from .repeater import RepeatedTimer
 
 
 class Light:
-    def __init__(self, db_obj, signal_obj):
-        self.db_obj = db_obj
-        self.signal_obj = signal_obj
-        self.control_list = None
-        self.timer = None
-        self.prev_control_index = None
+    def __init__(self, TLID):
+        self.TLID = TLID
+        self.prev_control_index = -1
 
-        # subscribe to the STS topics
-        subscription_path = subscriber.subscription_path(PROJECT_ID, self.db_obj.getSubscriptionID())
-        self.streaming_pull_future = subscriber.subscribe(subscription_path, callback=self.on_msg_handler)
-        self.streaming_pull_future.result()
-
+        self.on_spawn_handler()
         self.log("spawned")
 
     def on_msg_handler(self, msg):
@@ -30,9 +24,7 @@ class Light:
         try:
             msg = json.loads(msg.data)
             if msg[RECIPIENT] in ['all', self.db_obj.getSubscriptionID()]:
-                if msg[ACTION_TYPE] == SPAWN:
-                    self.on_spawn_handler(msg[PAYLOAD])
-                elif msg[ACTION_TYPE] == OVER_RIDE:
+                if msg[ACTION_TYPE] == OVER_RIDE:
                     self.on_over_ride_handler(msg[PAYLOAD])
                 elif msg[ACTION_TYPE] == NORMAL_RIDE:
                     self.on_normal_ride_handler(msg[PAYLOAD])
@@ -52,20 +44,20 @@ class Light:
         return control_index
 
     def update_light(self):
-        if self.db_obj.operationMode == OperationMode.OVERRIDE:
+        if self.mode == OperationMode.OVERRIDE:
             return
 
-        curr_control_index = self.get_control_index()
+        curr_control_index = self.control_list
         if curr_control_index == self.prev_control_index:
             return
 
         self.prev_control_index = curr_control_index
         curr_control = self.control_list[curr_control_index]
         curr_signal_state = SignalState.RED \
-            if self.db_obj.id in curr_control['green'] \
+            if self.TLID in curr_control['green'] \
             else SignalState.GREEN
         # self.log(curr_signal_state)
-        self.db_obj.signalState = curr_signal_state
+        self.sig = curr_signal_state
         self.db_obj.save()
 
     def on_over_ride_handler(self, payload):
@@ -83,17 +75,27 @@ class Light:
         # log
         self.log(OperationMode.NORMAL)
 
-    def on_spawn_handler(self, payload):
-        self.log(payload)
+    def on_spawn_handler(self):
+        data = requests.get(f"http://127.0.0.1:8000/maps/syncLight/{self.TLID}/").json()
 
-        self.timer = datetime.fromisoformat(payload['timer'])
-        self.control_list = payload['controlList']
+        syncTime = data['syncTime']
+        self.timer = datetime.fromisoformat(syncTime[:syncTime.rfind('.')])
+        self.control_list = data['controlList']
+        self.mode = data['mode']
+        self.resetInterval = data['resetInterval']
+        self.subscription_id = data['subcription_id']
+        self.project_id = data['project_id']
+
+        # subscribe to the STS topics
+        subscription_path = subscriber.subscription_path(PROJECT_ID, self.subscription_id)
+        self.streaming_pull_future = subscriber.subscribe(subscription_path, callback=self.on_msg_handler)
+        self.streaming_pull_future.result()
 
         RepeatedTimer(1, self.update_light)
 
     def log(self, msg):
-        logger.debug(f"{self.db_obj.getSubscriptionID()} --- {msg}")
+        logger.debug(f"{self.subscription_id} --- {msg}")
 
     @staticmethod
-    def lightSpawner(db_obj, signal_obj):
-        Light(db_obj, signal_obj)
+    def lightSpawner(TLID):
+        Light(TLID)

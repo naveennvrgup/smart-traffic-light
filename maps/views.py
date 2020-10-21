@@ -390,3 +390,17 @@ def RevokeOverRideView(request):
     return Response({
         'msg': "All over rides revoked successfully",
     }, status=status.HTTP_200_OK)
+
+
+@api_view(['get'])
+@permission_classes([AllowAny])
+def SyncLightView(request, TLID):
+    light = TrafficLight.objects.get(id=TLID)
+    return Response({
+        'syncTime': light.signal.timer,
+        'resetInterval': RESET_INTERVAL,
+        'mode': light.operationMode,
+        'project_id': PROJECT_ID,
+        'subcription_id': light.getSubscriptionID(),
+        'controlList': light.signal.controlList,
+    }, status=status.HTTP_200_OK)

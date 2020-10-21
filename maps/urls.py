@@ -11,5 +11,6 @@ urlpatterns = [
     path('onHospitalRoute/<int:routeId>/', OnHospitalRouteView),
     path('stateReporting/', StateReportingView),
     path('revokeOverRide/', RevokeOverRideView),
+    path('syncLight/<int:TLID>/', SyncLightView),
     path('reporting/', TemplateView.as_view(template_name='index.html')),
 ]
