@@ -2,7 +2,6 @@ import traceback
 from _datetime import datetime
 
 import requests
-from pytz import timezone
 
 from maps.models import *
 from .actions import *
@@ -18,12 +17,17 @@ class Light:
         self.on_spawn_handler()
         self.log("spawned")
 
+        # subscribe to the STS topics
+        subscription_path = subscriber.subscription_path(PROJECT_ID, self.subscription_id)
+        self.streaming_pull_future = subscriber.subscribe(subscription_path, callback=self.on_msg_handler)
+        self.streaming_pull_future.result()
+
     def on_msg_handler(self, msg):
         msg.ack()
 
         try:
             msg = json.loads(msg.data)
-            if msg[RECIPIENT] in ['all', self.db_obj.getSubscriptionID()]:
+            if msg[RECIPIENT] in ['all', self.subscription_id]:
                 if msg[ACTION_TYPE] == OVER_RIDE:
                     self.on_over_ride_handler(msg[PAYLOAD])
                 elif msg[ACTION_TYPE] == NORMAL_RIDE:
@@ -34,8 +38,8 @@ class Light:
             self.log(msg)
 
     def get_control_index(self):
-        timezone_india = timezone('Asia/Calcutta')
-        curr_time = datetime.now(timezone_india)
+        # timezone_india = timezone('Asia/Calcutta')
+        curr_time = datetime.now()
 
         slots_passed = (curr_time - self.timer).seconds // RESET_INTERVAL
 
@@ -47,7 +51,7 @@ class Light:
         if self.mode == OperationMode.OVERRIDE:
             return
 
-        curr_control_index = self.control_list
+        curr_control_index = self.get_control_index()
         if curr_control_index == self.prev_control_index:
             return
 
@@ -56,23 +60,30 @@ class Light:
         curr_signal_state = SignalState.RED \
             if self.TLID in curr_control['green'] \
             else SignalState.GREEN
-        # self.log(curr_signal_state)
-        self.sig = curr_signal_state
-        self.db_obj.save()
+        self.set_signal_state(curr_signal_state)
+
+    def set_signal_state(self, state):
+        requests.post(f"http://127.0.0.1:8000/maps/setTLState/", json={
+            "signalState": state,
+            "id": self.TLID
+        })
+
+    def set_signal_mode(self, mode):
+        requests.post(f"http://127.0.0.1:8000/maps/setTLMode/", json={
+            "operationMode": mode,
+            "id": self.TLID
+        })
 
     def on_over_ride_handler(self, payload):
-        self.db_obj.operationMode = OperationMode.OVERRIDE
-        self.db_obj.signalState = payload[OPERATION_COLOR]
-        self.db_obj.save()
-        # log
+        self.mode = OperationMode.OVERRIDE
+        self.set_signal_mode(self.mode)
+        self.set_signal_state(payload[OPERATION_COLOR])
         self.log(OperationMode.OVERRIDE + " " + payload[OPERATION_COLOR])
 
     def on_normal_ride_handler(self, payload):
-        self.db_obj.operationMode = OperationMode.NORMAL
-        self.db_obj.save()
-        # update
+        self.mode = OperationMode.NORMAL
+        self.set_signal_mode(self.mode)
         self.update_light()
-        # log
         self.log(OperationMode.NORMAL)
 
     def on_spawn_handler(self):
@@ -85,11 +96,6 @@ class Light:
         self.resetInterval = data['resetInterval']
         self.subscription_id = data['subcription_id']
         self.project_id = data['project_id']
-
-        # subscribe to the STS topics
-        subscription_path = subscriber.subscription_path(PROJECT_ID, self.subscription_id)
-        self.streaming_pull_future = subscriber.subscribe(subscription_path, callback=self.on_msg_handler)
-        self.streaming_pull_future.result()
 
         RepeatedTimer(1, self.update_light)
 

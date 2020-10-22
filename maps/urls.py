@@ -12,5 +12,7 @@ urlpatterns = [
     path('stateReporting/', StateReportingView),
     path('revokeOverRide/', RevokeOverRideView),
     path('syncLight/<int:TLID>/', SyncLightView),
+    path('setTLState/', SetTrafficLightState),
+    path('setTLMode/', SetTrafficLightMode),
     path('reporting/', TemplateView.as_view(template_name='index.html')),
 ]

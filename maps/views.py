@@ -4,6 +4,7 @@ import traceback
 import polyline
 import requests
 from decouple import config
+from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from geopy.distance import geodesic
 from rest_framework import status
@@ -371,6 +372,11 @@ def OnHospitalRouteView(request, routeId):
     return Response({'msg': 'Switched to hospital route'}, status.HTTP_200_OK)
 
 
+@swagger_auto_schema(
+    operation_id='for_reporting_dashboard',
+    responses={},
+    method='get'
+)
 @api_view(['get'])
 @permission_classes([AllowAny])
 def StateReportingView(request):
@@ -381,6 +387,11 @@ def StateReportingView(request):
     }, status=status.HTTP_200_OK)
 
 
+@swagger_auto_schema(
+    operation_id='for_app_to_turn_off_override_in_a_signal',
+    responses={},
+    method='get'
+)
 @api_view(['get'])
 @permission_classes([IsAuthenticated])
 def RevokeOverRideView(request):
@@ -392,6 +403,11 @@ def RevokeOverRideView(request):
     }, status=status.HTTP_200_OK)
 
 
+@swagger_auto_schema(
+    operation_id='for_iot_device_to_get_sync_info',
+    responses={},
+    method='get'
+)
 @api_view(['get'])
 @permission_classes([AllowAny])
 def SyncLightView(request, TLID):
@@ -404,3 +420,49 @@ def SyncLightView(request, TLID):
         'subcription_id': light.getSubscriptionID(),
         'controlList': light.signal.controlList,
     }, status=status.HTTP_200_OK)
+
+
+@swagger_auto_schema(
+    operation_id='for_iot_device_to_update_state',
+    request_body=SetTrafficLightStateBody,
+    responses={},
+    method='post'
+)
+@api_view(['post'])
+@permission_classes([AllowAny])
+def SetTrafficLightState(request):
+    data = request.data
+
+    instance = get_object_or_404(TrafficLight.objects.all(), pk=data['id'])
+    serializer = SetTrafficLightStateBody(instance, data=request.data)
+
+    if serializer.is_valid():
+        serializer.save()
+        return Response({
+            "msg": "Successfully updated the Traffic Light"
+        }, status=status.HTTP_200_OK)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@swagger_auto_schema(
+    operation_id='for_iot_device_to_update_mode',
+    request_body=SetTrafficLightModeBody,
+    responses={},
+    method='post'
+)
+@api_view(['post'])
+@permission_classes([AllowAny])
+def SetTrafficLightMode(request):
+    data = request.data
+
+    instance = get_object_or_404(TrafficLight.objects.all(), pk=data['id'])
+    serializer = SetTrafficLightModeBody(instance, data=request.data)
+
+    if serializer.is_valid():
+        serializer.save()
+        return Response({
+            "msg": "Successfully updated the Traffic Light"
+        }, status=status.HTTP_200_OK)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

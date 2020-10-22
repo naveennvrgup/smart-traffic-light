@@ -33,3 +33,21 @@ class TrafficSignalSerializer(serializers.ModelSerializer):
     class Meta:
         model = TrafficSignal
         fields = '__all__'
+
+
+class SetTrafficLightStateBody(serializers.ModelSerializer):
+    signalState = serializers.CharField(required=True)
+    id = serializers.IntegerField(required=True)
+
+    class Meta:
+        model = TrafficLight
+        fields = ['signalState', 'id']
+
+
+class SetTrafficLightModeBody(serializers.ModelSerializer):
+    operationMode = serializers.CharField(required=True)
+    id = serializers.IntegerField(required=True)
+
+    class Meta:
+        model = TrafficLight
+        fields = ['operationMode', 'id']
