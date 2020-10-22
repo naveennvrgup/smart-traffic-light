@@ -74,6 +74,12 @@ class Light:
             "id": self.TLID
         })
 
+    def send_heart_beat(self):
+        requests.post(f"http://127.0.0.1:8000/maps/heartbeat/", json={
+            "heartbeat": str(datetime.now()),
+            "id": self.TLID
+        })
+
     def on_over_ride_handler(self, payload):
         self.mode = OperationMode.OVERRIDE
         self.set_signal_mode(self.mode)
@@ -98,6 +104,7 @@ class Light:
         self.project_id = data['project_id']
 
         RepeatedTimer(1, self.update_light)
+        RepeatedTimer(60, self.send_heart_beat)
 
     def log(self, msg):
         logger.debug(f"{self.subscription_id} --- {msg}")

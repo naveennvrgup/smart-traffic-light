@@ -86,6 +86,7 @@ class TrafficSignal(models.Model):
 class TrafficLight(models.Model):
     signal = models.ForeignKey(TrafficSignal, on_delete=models.CASCADE)
     direction = models.IntegerField()
+    heartbeat = models.DateTimeField(default=datetime.now())
 
     operationMode = models.CharField(max_length=2, choices=OperationMode.choices, default=OperationMode.NORMAL)
     signalState = models.CharField(max_length=2, choices=SignalState.choices, default=SignalState.RED)

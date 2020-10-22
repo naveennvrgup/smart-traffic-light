@@ -51,3 +51,11 @@ class SetTrafficLightModeBody(serializers.ModelSerializer):
     class Meta:
         model = TrafficLight
         fields = ['operationMode', 'id']
+
+
+class HeartBeatBody(serializers.ModelSerializer):
+    heartbeat = serializers.DateTimeField(required=True)
+
+    class Meta:
+        model = TrafficLight
+        fields = ['heartbeat', 'id']

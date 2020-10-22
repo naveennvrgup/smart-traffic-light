@@ -466,3 +466,26 @@ def SetTrafficLightMode(request):
         }, status=status.HTTP_200_OK)
     else:
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@swagger_auto_schema(
+    operation_id='for_iot_device_to_send_heart_beat',
+    request_body=HeartBeatBody,
+    responses={},
+    method='post'
+)
+@api_view(['post'])
+@permission_classes([AllowAny])
+def HeartBeatView(request):
+    data = request.data
+
+    instance = get_object_or_404(TrafficLight.objects.all(), pk=data['id'])
+    serializer = HeartBeatBody(instance, data=request.data)
+
+    if serializer.is_valid():
+        serializer.save()
+        return Response({
+            "msg": "Successfully updated the Traffic Light heartbeat"
+        }, status=status.HTTP_200_OK)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

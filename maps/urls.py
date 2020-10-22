@@ -14,5 +14,6 @@ urlpatterns = [
     path('syncLight/<int:TLID>/', SyncLightView),
     path('setTLState/', SetTrafficLightState),
     path('setTLMode/', SetTrafficLightMode),
+    path('heartbeat/', HeartBeatView),
     path('reporting/', TemplateView.as_view(template_name='index.html')),
 ]
