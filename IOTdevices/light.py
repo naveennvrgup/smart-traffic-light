@@ -7,7 +7,9 @@ from maps.models import *
 from .actions import *
 from .logger import logger
 from .repeater import RepeatedTimer
+from decouple import config
 
+BASEURL = config('BASEURL')
 
 class Light:
     def __init__(self, TLID):
@@ -63,19 +65,19 @@ class Light:
         self.set_signal_state(curr_signal_state)
 
     def set_signal_state(self, state):
-        requests.post(f"http://127.0.0.1:8000/maps/setTLState/", json={
+        requests.post(f"{BASEURL}/maps/setTLState/", json={
             "signalState": state,
             "id": self.TLID
         })
 
     def set_signal_mode(self, mode):
-        requests.post(f"http://127.0.0.1:8000/maps/setTLMode/", json={
+        requests.post(f"{BASEURL}/maps/setTLMode/", json={
             "operationMode": mode,
             "id": self.TLID
         })
 
     def send_heart_beat(self):
-        requests.post(f"http://127.0.0.1:8000/maps/heartbeat/", json={
+        requests.post(f"{BASEURL}/maps/heartbeat/", json={
             "heartbeat": str(datetime.now()),
             "id": self.TLID
         })
@@ -93,7 +95,7 @@ class Light:
         self.log(OperationMode.NORMAL)
 
     def on_spawn_handler(self):
-        data = requests.get(f"http://127.0.0.1:8000/maps/syncLight/{self.TLID}/").json()
+        data = requests.get(f"{BASEURL}/maps/syncLight/{self.TLID}/").json()
 
         syncTime = data['syncTime']
         self.timer = datetime.fromisoformat(syncTime[:syncTime.rfind('.')])
