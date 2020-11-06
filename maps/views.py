@@ -283,7 +283,7 @@ def SmartRouteView(request):
         'hospitalPolyline': hospitalPolyline,
 
         'destinationWayPoints': destinationWaypoints,
-        'hospitalWayPoints': destinationWaypoints,
+        'hospitalWayPoints': hospitalWaypoints,
     }
 
     return Response(smartRouteResponse, status.HTTP_200_OK)
