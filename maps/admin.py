@@ -4,7 +4,7 @@ from django_json_widget.widgets import JSONEditorWidget
 from .models import *
 
 
-@admin.register(HospitalRoute)
+@admin.register(Route)
 @admin.register(TrafficSignal)
 class YourModelAdmin(admin.ModelAdmin):
     formfield_overrides = {

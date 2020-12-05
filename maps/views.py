@@ -189,7 +189,7 @@ def findNearestHospital(lat, lng):
 
 
 @swagger_auto_schema(
-    operation_id='smart_route',
+    operation_id='APP>>>smart_route',
     request_body=RoutingSerializer,
     responses={
         401: set_example(responses.unauthenticated_401),
@@ -256,7 +256,7 @@ def SmartRouteView(request):
     override_signals([x['id'] for x in desSignals], [x['id'] for x in desLights])
 
     # save the hospital route override in the future
-    hos_route = HospitalRoute.objects.create(route_info={
+    hos_route = Route.objects.create(route_info={
         "signals": [x['id'] for x in hosSignals],
         "lights": [x['id'] for x in hosLights]
     })
@@ -337,7 +337,7 @@ def AllHospitalsView(request):
 
 
 @swagger_auto_schema(
-    operation_id='turn_traffic_signal_to_normal_state',
+    operation_id='APP>>>turn_traffic_signal_to_normal_state',
     responses={
         401: set_example(responses.unauthenticated_401),
     },
@@ -355,7 +355,7 @@ def TurnTrafficSignalNormalView(request, signalId):
 
 
 @swagger_auto_schema(
-    operation_id='turn_on_hospital_route',
+    operation_id='APP>>turn_on_hospital_route',
     responses={
         401: set_example(responses.unauthenticated_401),
     },
@@ -364,7 +364,7 @@ def TurnTrafficSignalNormalView(request, signalId):
 @api_view(['get'])
 @permission_classes([IsAuthenticated])
 def OnHospitalRouteView(request, routeId):
-    hospital_route_obj = HospitalRoute.objects.get(id=routeId).route_info
+    hospital_route_obj = Route.objects.get(id=routeId).route_info
     signals = hospital_route_obj['signals']
     lights = hospital_route_obj['lights']
     override_signals(signals, lights)
@@ -388,7 +388,7 @@ def StateReportingView(request):
 
 
 @swagger_auto_schema(
-    operation_id='for_app_to_turn_off_override_in_a_signal',
+    operation_id='turn_off_override_in_all_signal',
     responses={},
     method='get'
 )
