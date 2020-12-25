@@ -13,3 +13,18 @@ In this project we propose a new architecture named CSTMC to address the limitat
 1. Shristi Agrawal	
 
 #### Screenshots:
+<img src='image016.png'/>
+
+<div style='display:inline' >
+<img src='image053.png' width='32%' style='margin-left:1%'/>
+<img src='image055.png' width='32%' style='margin-left:1%'/>
+<img src='image057.png' width='32%' style='margin-left:1%'/>
+</div>
+
+<div style='display:inline'>
+<img src='image059.png' width='32%'/>
+<img src='image061.png' width='32%'/>
+<img src='image063.png' width='32%'/>
+</div>
+
+<img src='image065.png'/>
